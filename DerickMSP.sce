@@ -28,11 +28,11 @@ endfunction
 function [vT] = criandoVetorTensao(nBarra, tensaoBase)
     vT = [];
     for (i = 1:nBarra)
-        vT(i) = 13800;
+        vT(i) = tensaoBase;
     end
 endfunction
 
-function [Pnb, Qnb] = calcPotencia(nBarra, vP, vQ, vR, vX, vT, interacao)
+function [Pnb, Qnb] = calcPotencia(nBarra, vP, vQ, vR, vX, vT, perdasP, perdasQ, interacao)
     Pnb = [];
     Qnb = [];
     for (i = nBarra:-1:1)
@@ -45,22 +45,27 @@ function [Pnb, Qnb] = calcPotencia(nBarra, vP, vQ, vR, vX, vT, interacao)
             Pnb(i) = Pperdas + vP(i) + Pnb(i+1);
             Qnb(i) = Qperdas + vQ(i) + Qnb(i+1);
         else
-            Pperdas = (vR(i)*((Pnb(i+1)^2)+(Qnb(i+1)^2)))/(vT(i+1)^2);
-            Qperdas = (vX(i)*((Pnb(i+1)^2)+(Qnb(i+1)^2)))/(vT(i+1)^2);
-            Pnb(i) = Pperdas + vP(i) + Pnb(i+1);
-            Qnb(i) = Qperdas + vQ(i) + Qnb(i+1);
+            Pnb(i) = perdasP(i) + vP(i) + Pnb(i+1);
+            Qnb(i) = perdasQ(i) + vQ(i) + Qnb(i+1);
         end
     end
     
 endfunction
 
-function [vTT] = calcTensao(nBarra, Pnb, Qnb, vR, vX, vT)
+function [vTT] = calcTensao(nBarra, Pnb, Qnb, vR, vX, vT, tBase)
     vTT = [];
-    vTT(1) = 13800;
+    vTT(1) = tBase;
     for (i = 2:nBarra)
         B = Pnb(i) * vR(i-1) + Qnb(i) * vX(i-1) - 0.5*(vT(i-1)^2);
         D = ((Pnb(i))^2+(Qnb(i))^2)*((vR(i-1))^2+(vX(i-1))^2);
         vTT(i) = sqrt(-B+sqrt((B)^2-D));
+    end
+endfunction
+
+function [perdasP, perdasQ] = calcPerdas(nBarra, Pnb, Qnb, vR, vX, vTT)
+    for (i = 1:nBarra-1)
+            perdasP(i) = (vR(i)*((Pnb(i+1)^2)+(Qnb(i+1)^2)))/(vTT(i+1)^2);
+            perdasQ(i) = (vX(i)*((Pnb(i+1)^2)+(Qnb(i+1)^2)))/(vTT(i+1)^2);
     end
 endfunction
 
@@ -86,16 +91,12 @@ function [vT] = trocaValores(nBarra,vT, vTT)
     end
 endfunction
 
-function [Pp, Qp] = calcPerdas(nBarra, Pnb, Qnb, vR, vX, vT)
-    Pperdas = [];
-    Qperdas = [];
-    Pp = 0;
-    Qp = 0;
-    for (i = nBarra-1:-1:1)
-            Pperdas(i) = (vR(i)*((Pnb(i+1)^2)+(Qnb(i+1)^2)))/(vT(i+1)^2);
-            Qperdas(i) = (vX(i)*((Pnb(i+1)^2)+(Qnb(i+1)^2)))/(vT(i+1)^2);
-            Pp = Pp + Pperdas(i);
-            Qp = Qp + Qperdas(i);
+function [pP, pQ] = calcPerdasTotais(nBarra, perdasP, perdasQ)
+    pP = 0;
+    pQ = 0;
+    for (i = 1:nBarra-1)
+            pP = pP + perdasP(i);
+            pQ = pQ + perdasQ(i);
     end
 endfunction
 
@@ -145,24 +146,38 @@ disp("Fluxo de Potência MSP");
 nBarras = input("Digite o numero de barras: ");
 tBase = input("Digite a tensão base em V: ");
 tol = input("Digite a tolerancia: ");
-[vR,vX] = criandoVetorLinha(nBarras);
-[vP,vQ] = criandoVetorCarga(nBarras);
+disp("Digite 0 para o modo novo / digite 1 para o modo do trabalho");
+modo = input('Digite: ')
+if modo == 1 then
+    vR = [1.090, 1.104, 2.005, 3.088, 1.003, 1.002, 4.003, 5.042, 2.090, 1.504, 1.230, 2.100, 3.309];
+    vX = [0.405, 0.404, 0.803, 1.029, 0.405, 0.407, 1.315, 1.697, 0.718, 0.408, 0.350, 0.708, 1.103];
+    vP = [0, 60, 58, 54, 50, 50, 56, 50, 50, 48, 44, 40, 36, 32] * 1000;
+    vQ = [0, 30, 29, 27, 25, 25, 28, 25, 25, 24, 22, 20, 18, 16] * 1000;
+else
+    [vR,vX] = criandoVetorLinha(nBarras);
+    [vP,vQ] = criandoVetorCarga(nBarras);
+end
+
 [vT] = criandoVetorTensao(nBarras, tBase);
 
 mostravalores(nBarras, tBase, tol, vR, vX, vP, vQ);
 
 interacao = 0;
 erro = 0;
+perdasP = zeros(nBarras-1, 1);
+perdasQ = zeros(nBarras-1, 1);
+
 while (erro ~= nBarras)
     interacao = interacao + 1;
-    [Pnb, Qnb] = calcPotencia(nBarras, vP, vQ, vR, vX, vT, interacao);
-    [vTT] = calcTensao(nBarras, Pnb, Qnb, vR, vX, vT);
+    [Pnb, Qnb] = calcPotencia(nBarras, vP, vQ, vR, vX, vT, perdasP, perdasQ, interacao);
+    [vTT] = calcTensao(nBarras, Pnb, Qnb, vR, vX, vT,tBase);
+    [perdasP, perdasQ] = calcPerdas(nBarras, Pnb, Qnb, vR, vX, vTT);
     [vErro] = calcErro(nBarras, vT, vTT, tol);
     [vT] = trocaValores(nBarras,vT, vTT);
     [erro] = somaErro(nBarras, vErro);
 end
 
-[Pp, Qp] = calcPerdas(nBarras, Pnb, Qnb, vR, vX, vT);
+[Pp, Qp] = calcPerdasTotais(nBarras, perdasP, perdasQ);
 [vBase]= calcTensaoBase(nBarras, vT, tBase);
 disp('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
 disp('Levou ' + string(interacao) + ' interação para terminar');
