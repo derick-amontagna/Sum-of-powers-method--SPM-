@@ -32,7 +32,7 @@ function [vT] = criandoVetorTensao(nBarra, tensaoBase)
     end
 endfunction
 
-function [Pnb, Qnb] = calcPotencia(nBarra, vP, vQ, vR, vX, vT, perdasP, perdasQ, interacao)
+function [Pnb, Qnb] = calcPotencia(nBarra, vP, vQ, vR, vX, perdasP, perdasQ, interacao)
     Pnb = [];
     Qnb = [];
     for (i = nBarra:-1:1)
@@ -52,11 +52,11 @@ function [Pnb, Qnb] = calcPotencia(nBarra, vP, vQ, vR, vX, vT, perdasP, perdasQ,
     
 endfunction
 
-function [vTT] = calcTensao(nBarra, Pnb, Qnb, vR, vX, vT, tBase)
+function [vTT] = calcTensao(nBarra, Pnb, Qnb, vR, vX, tBase)
     vTT = [];
     vTT(1) = tBase;
     for (i = 2:nBarra)
-        B = Pnb(i) * vR(i-1) + Qnb(i) * vX(i-1) - 0.5*(vT(i-1)^2);
+        B = Pnb(i) * vR(i-1) + Qnb(i) * vX(i-1) - 0.5*(vTT(i-1)^2);
         D = ((Pnb(i))^2+(Qnb(i))^2)*((vR(i-1))^2+(vX(i-1))^2);
         vTT(i) = sqrt(-B+sqrt((B)^2-D));
     end
@@ -87,7 +87,7 @@ endfunction
 
 function [vT] = trocaValores(nBarra,vT, vTT)
     for (i = 1:nBarra)
-        vT(i) = vTT(i)
+        vT(i) = vTT(i);
     end
 endfunction
 
@@ -152,7 +152,7 @@ nBarras = input("Digite o numero de nós: ");
 tBase = input("Digite a tensão base em V: ");
 tol = input("Digite a tolerancia: ");
 disp("Digite 0 - Para valores novos/ Digite 1 - para os valores do trabalho");
-modo = input('Digite: ')
+modo = input('Digite: ');
 if modo == 1 then
     vR = [1.090, 1.104, 2.005, 3.088, 1.003, 1.002, 4.003, 5.042, 2.090, 1.504, 1.230, 2.100, 3.309];
     vX = [0.405, 0.404, 0.803, 1.029, 0.405, 0.407, 1.315, 1.697, 0.718, 0.408, 0.350, 0.708, 1.103];
@@ -174,8 +174,8 @@ perdasQ = zeros(nBarras-1, 1);
 
 while (erro ~= nBarras)
     interacao = interacao + 1;
-    [Pnb, Qnb] = calcPotencia(nBarras, vP, vQ, vR, vX, vT, perdasP, perdasQ, interacao);
-    [vTT] = calcTensao(nBarras, Pnb, Qnb, vR, vX, vT,tBase);
+    [Pnb, Qnb] = calcPotencia(nBarras, vP, vQ, vR, vX, perdasP, perdasQ, interacao);
+    [vTT] = calcTensao(nBarras, Pnb, Qnb, vR, vX, tBase);
     [perdasP, perdasQ] = calcPerdas(nBarras, Pnb, Qnb, vR, vX, vTT);
     [vErro] = calcErro(nBarras, vT, vTT, tol);
     [vT] = trocaValores(nBarras,vT, vTT);
