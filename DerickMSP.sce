@@ -114,6 +114,11 @@ function [erro] = somaErro(nBarra, vErro)
     end
 endfunction
 
+function [supP, supQ] = calcSupPQ(Pnb, Qnb)
+            supP = Pnb(1);
+            supQ = Qnb(1);
+endfunction
+
 function mostravalores(nBarra, tBase, tol, vR, vX, vP, vQ)
     disp("+++++++++++++++++++++++++++++++++++++++++++++++++++");
     disp("A tensão base é "+string(tBase)+ " V" + " e a tolerância é " +string(tol));
@@ -143,10 +148,10 @@ endfunction
 
 
 disp("Fluxo de Potência MSP");
-nBarras = input("Digite o numero de barras: ");
+nBarras = input("Digite o numero de nós: ");
 tBase = input("Digite a tensão base em V: ");
 tol = input("Digite a tolerancia: ");
-disp("Digite 0 para o modo novo / digite 1 para o modo do trabalho");
+disp("Digite 0 - Para valores novos/ Digite 1 - para os valores do trabalho");
 modo = input('Digite: ')
 if modo == 1 then
     vR = [1.090, 1.104, 2.005, 3.088, 1.003, 1.002, 4.003, 5.042, 2.090, 1.504, 1.230, 2.100, 3.309];
@@ -179,12 +184,17 @@ end
 
 [Pp, Qp] = calcPerdasTotais(nBarras, perdasP, perdasQ);
 [vBase]= calcTensaoBase(nBarras, vT, tBase);
+[supP, supQ] = calcSupPQ(Pnb, Qnb);
 disp('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
 disp('Levou ' + string(interacao) + ' interação para terminar');
 disp('---------------------');
-disp('As suas perdas foram:');
+disp('As suas perdas totais foram:');
 disp("P: " + string(Pp/1000) + " kW");
 disp("Q: " + string(Qp/1000) + " kVar");
+disp('---------------------');
+disp('As suas potencias fornecidas pela subestação:');
+disp("P: " + string(supP/1000) + " kW");
+disp("Q: " + string(supQ/1000) + " kVar");
 disp('---------------------');
 disp("Suas tensões foram: "); 
 for (i = 1:nBarras)
