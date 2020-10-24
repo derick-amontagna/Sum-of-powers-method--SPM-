@@ -146,6 +146,15 @@ function mostravalores(nBarra, tBase, tol, vR, vX, vP, vQ)
     ok = input('Pressione qualquer botão para continuar');
 endfunction
 
+function mostraPotenciasLinhas(nBarra, Pnb, Qnb, perdasP, perdasQ, vP, vQ)
+    disp("---Linhas---Pl(W)-------Ql(W)------");
+    for (i = 1:nBarra-1)
+            q = Qnb(i) - perdasQ(i)- vQ(i);
+            p = Pnb(i) - perdasP(i)- vP(i);
+            prox = i + 1;
+        disp("    "+string(i)+"-"+string(prox)+"       "+string(p)+"     "+string(q));
+    end
+endfunction
 
 disp("Fluxo de Potência MSP");
 nBarras = input("Digite o numero de nós: ");
@@ -201,5 +210,7 @@ for (i = 1:nBarras)
     tensao = vBase(i);
     disp("V" + string(i) + ": " + string(tensao)+ " pu"); 
 end
+disp('As suas potencias fornecidas em cada linha foram:');
+mostraPotenciasLinhas(nBarras, Pnb, Qnb, perdasP, perdasQ, vP, vQ);
 disp('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
 disp('+++++++++++++++++++++++++++++++++++++++++FIM++++++++++++++++++++++++++++++++++++++++++');
